@@ -1,13 +1,11 @@
 import { useState, useEffect} from 'react'
-import axios from 'axios'
+import numberServices from './services/numbers'
+
 const App = () => {
   const [persons, setPersons] = useState([])
-
+  
   useEffect(() => {
-
-    axios.get("http://localhost:3001/persons").then(response => {
-      setPersons(response.data)
-    })
+    numberServices.getAll().then(persons => setPersons(persons))
   }, [])
 
   const [newName, setNewName] = useState('')
@@ -25,10 +23,19 @@ const App = () => {
       }
     }
     if (!name_exists){
-      setPersons(persons.concat({name: newName, number: newNumber}))
+      numberServices.create({name: newName, number: newNumber})
+      .then(newPersons => setPersons(persons.concat(newPersons)))
+      setNewName('')
+      setNewNumber('')
     }
     else{
-      alert(`${newName} is already added to phonebook`)
+      if (window.confirm(`${newName} is already added to phonebook, replace the old number with a new one?`)) {
+        const switchPerson = persons.filter(person => person.name === newName)[0]
+
+        numberServices.update(switchPerson.id, {name: newName, number: newNumber})
+        .then(setPersons(persons.map(person => person.name === newName? {...person, number: newNumber} : person)))
+        // console.log(switchPerson)
+      }
     }
   }
 
@@ -44,26 +51,35 @@ const App = () => {
     setFilter(event.target.value.toLowerCase())
   }
   
+  const deletePerson = (name, id) => {
+    if (window.confirm(`Delete ${name}?`)) {
+      numberServices.remove(id)
+      .then(() => {
+        setPersons(persons.filter(person => person.id !== id))
+      })
+    }
+  }
   return (
     <div>
       <h2>Phonebook</h2>
         <Filter onChange={addFilter}/>
       <h2>add a new</h2>
-        <PersonForm onNameChange={addNewName} onNumberChange={addNewNumber} onSubmit={addInfo}/>
+        <PersonForm onNameChange={addNewName} onNumberChange={addNewNumber} 
+        onSubmit={addInfo} numberValue ={newNumber} nameValue={newName}/>
       <h2>Numbers</h2>
-      <Persons filtered={filtered_persons}/>
+      <Persons filtered={filtered_persons} onClick={deletePerson}/>
     </div>
   )
 }
 
 const PersonForm = (props) => {
   return(
-      <form onSubmit={props.addInfo}>
+      <form onSubmit={props.onSubmit}>
         <div>
-          name: <input onChange={props.onNameChange}/>
+          name: <input value= {props.nameValue} onChange={props.onNameChange}/>
         </div>
         <div>
-          number: <input onChange={props.onNumberChange}/>
+          number: <input value={props.numberValue} onChange={props.onNumberChange}/>
         </div>
         <div>
           <button type="submit">add</button>
@@ -83,7 +99,9 @@ const Filter = (props) => {
 const Persons = (props) => {
   return (
     <div>
-      {props.filtered.map(person => <div key={person.name}>{person.name} {person.number}</div>)}
+      {props.filtered.map(person =>
+         <div key={person.name}>{person.name} {person.number} 
+         <button onClick={() => props.onClick(person.name, person.id)}>delete</button></div>)}
     </div>
   )
 }
