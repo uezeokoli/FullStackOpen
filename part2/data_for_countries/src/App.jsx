@@ -58,7 +58,6 @@ const Weather = (props) => {
   const icon_url = 'https://openweathermap.org/img/wn/'
   if (countries.length === 1 && weatherData.list){
     console.log(`${icon_url + weatherData.list[0].weather[0].icon}`)
-    // console.log(weatherData.list[0].weather[0].icon)
     return (
       <div>
       <div><h1>Weather in {country.name.common}</h1></div>
