@@ -11,6 +11,7 @@ const App = () => {
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
   const [filter, setFilter] = useState('')
+  const [notificationMessage, setNotificationMessage] = useState('')
 
   const filtered_persons = persons.filter(person => person.name.toLowerCase().includes(filter))
 
@@ -24,7 +25,12 @@ const App = () => {
     }
     if (!name_exists){
       numberServices.create({name: newName, number: newNumber})
-      .then(newPersons => setPersons(persons.concat(newPersons)))
+      .then(newPersons => {
+        setPersons(persons.concat(newPersons))
+        setNotificationMessage(`Added ${newPersons.name}`)
+        setTimeout(() => setNotificationMessage(''), 5000)
+        console.log('1')
+      })
       setNewName('')
       setNewNumber('')
     }
@@ -34,7 +40,10 @@ const App = () => {
 
         numberServices.update(switchPerson.id, {name: newName, number: newNumber})
         .then(setPersons(persons.map(person => person.name === newName? {...person, number: newNumber} : person)))
-        // console.log(switchPerson)
+        .then(setTimeout(() => setNotificationMessage(`Changed ${newName} number`),))
+
+        setNotificationMessage(`Changed ${newName} number`)
+        setTimeout(() => setNotificationMessage(''), 5000)
       }
     }
   }
@@ -62,6 +71,7 @@ const App = () => {
   return (
     <div>
       <h2>Phonebook</h2>
+      <Notification message={notificationMessage}/>
         <Filter onChange={addFilter}/>
       <h2>add a new</h2>
         <PersonForm onNameChange={addNewName} onNumberChange={addNewNumber} 
@@ -72,6 +82,13 @@ const App = () => {
   )
 }
 
+const Notification = (props) => {
+  if (props.message !== ''){
+      return (
+        <div className='notification'>{props.message}</div>
+      )
+  }
+}
 const PersonForm = (props) => {
   return(
       <form onSubmit={props.onSubmit}>
